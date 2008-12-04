@@ -1,0 +1,81 @@
+#!/usr/bin/perl -w
+use strict;
+use warnings;
+use Getopt::Long;
+use RTx::WorkflowBuilder;
+
+my ($queue, $wf_name) = @ARGV;
+
+my %opts;
+GetOptions( \%opts, "create" );
+
+use RT::Interface::CLI qw(CleanEnv
+                          GetCurrentUser GetMessageContent);
+CleanEnv();
+
+#Load etc/config.pm and drop privs
+RT::LoadConfig();
+RT::Init();
+
+my $q = RT::Queue->new($RT::SystemUser);
+$q->Load($queue) or die "Can't load queue: $queue";
+
+my $stages = RT::Config->Get('WorkflowBuilderStages');
+
+my $workflows = RT::Config->Get('WorkflowBuilderRules');
+
+my $scrips = RT::Scrips->new($RT::SystemUser);
+$scrips->Limit( FIELD => 'Queue',
+                VALUE => $q->Id );
+
+my $workflow_script;
+
+die "no workflow named $wf_name found" unless $workflows->{$wf_name};
+
+# XXX: ensure all stages exist
+
+while (my $scrip = $scrips->Next) {
+    # XXX: make sure it's *our* scrip
+    #    next unless .....
+
+    warn $scrip->TemplateObj->Name;
+    if ($workflow_script) {
+        die "two scrips exist for queue @{[ $q->Name ]} workflow: ";
+    }
+    $workflow_script = $scrip;
+}
+
+my $approval_template = RTx::WorkflowBuilder->new
+    ({ stages => $stages,
+       rule   => $workflows->{$wf_name} })
+    ->compile_template;
+
+warn $approval_template;
+
+if (!$workflow_script) {
+    die "no workflow found, use --create" unless $opts{create};
+
+    my $scrip = RT::Scrip->new($RT::SystemUser);
+
+    my $apptemp = RT::Template->new($RT::SystemUser);
+    $apptemp->Create( Content => $approval_template,
+                      Name => $wf_name, Queue => $q->Id);
+
+    my ($sval, $smsg) = $scrip->Create( ScripCondition => 'On Create',
+                                        ScripAction => 'Create Tickets',
+                                        Template => $apptemp->Id,
+                                        Queue => $q->Id);
+}
+else {
+    die "workflow already exists" if $opts{create};
+    warn "updating... $wf_name for @{[ $q->Name ]}";
+
+    warn "template name changed"
+        if $workflow_script->TemplateObj->Name ne $wf_name;
+    $workflow_script->TemplateObj->SetContent($approval_template);
+    $workflow_script->TemplateObj->SetName($wf_name);
+}
+
+
+1;
+
