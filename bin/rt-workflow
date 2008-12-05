@@ -38,7 +38,6 @@ while (my $scrip = $scrips->Next) {
     # XXX: make sure it's *our* scrip
     #    next unless .....
 
-    warn $scrip->TemplateObj->Name;
     if ($workflow_script) {
         die "two scrips exist for queue @{[ $q->Name ]} workflow: ";
     }
@@ -49,8 +48,6 @@ my $approval_template = RTx::WorkflowBuilder->new
     ({ stages => $stages,
        rule   => $workflows->{$wf_name} })
     ->compile_template;
-
-warn $approval_template;
 
 if (!$workflow_script) {
     die "no workflow found, use --create" unless $opts{create};
