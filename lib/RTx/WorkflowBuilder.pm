@@ -1,11 +1,13 @@
 package RTx::WorkflowBuilder;
 use base 'Class::Accessor::Fast';
-
+use strict;
+use warnings;
 __PACKAGE__->mk_accessors(qw(stages rule));
 
 sub get_stage_object {
     my ($self, $stage, $previous, $approving) = @_;
     if (ref $stage eq 'ARRAY') {
+        my @result;
         my @chain = @$stage;
         for (0..$#chain) {
             push @result,
@@ -63,11 +65,12 @@ sub compile_template {
         s/\$Approving/\$Tickets{TOP}/g;
     }
 
+    my $content = $self->content || "\n";
 
     return join("\n",
                 "===Create-Ticket: workflow-".$self->name,
                 (map { "$_: $attributes->{$_}" } keys %$attributes),
-                "Content: @{[$self->content]}\nENDOFCONTENT\n");
+                "Content: $content\nENDOFCONTENT\n");
 }
 
 1;

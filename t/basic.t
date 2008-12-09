@@ -17,9 +17,6 @@ RT->Config->Set( LogToScreen => 'debug' );
 
 my ($baseurl, $m) = RT::Test->started_ok;
 
-my ($user_a, $user_b) = (RT::User->new($RT::SystemUser), RT::User->new($RT::SystemUser));
-my ($user_c) = RT::User->new($RT::SystemUser);
-
 my $q = RT::Queue->new($RT::SystemUser);
 $q->Load('___Approvals');
 
@@ -168,7 +165,7 @@ mail_ok {
     to => 'ceo@company.com',
     subject => qr/New Pending Approval/,
     body => qr/pending your approval/
-},{ from => qr/CFO via RT/,
+},{ from => qr/RT System/,
     to => 'minion@company.com',
     subject => qr/Ticket Approved:/,
     body => qr/approved by CFO/
@@ -186,7 +183,7 @@ mail_ok {
     my ($ok, $msg) = $dependson_ceo->SetStatus( Status => 'resolved' );
     ok($ok, "ceo can approve - $msg");
 
-} { from => qr/CEO via RT/,
+} { from => qr/RT System/,
     to => 'minion@company.com',
     subject => qr/Ticket Approved:/,
     body => qr/approved by CEO/
