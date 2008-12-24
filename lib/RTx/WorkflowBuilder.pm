@@ -33,7 +33,7 @@ sub get_stage_object {
 sub compile_template {
     my $self = shift;
     my $stages = $self->get_stage_object($self->rule, undef, 'TOP');
-    return join('', map { $_->compile_template }
+    return join('', map { $_->compile_template(@_) }
                     map { ref $_ eq 'ARRAY' ? @$_ : $_ } @$stages )."\n"; # flatten with map
 }
 
@@ -44,7 +44,6 @@ __PACKAGE__->mk_accessors(qw(name owner content depends_on depended_on_by subjec
 
 sub compile_template {
     my $self = shift;
-
     my $attributes = { Queue => '___Approvals',
                        Type => 'approval',
                        Owner => $self->owner,
@@ -53,6 +52,7 @@ sub compile_template {
                        'Refers-To' => 'TOP',
                        Due => '{time + 86400}', # XXX: configurable
                        'Content-Type' => 'text/plain',
+                       @_,
                        $self->depends_on ? (
                            'Depends-On' => "workflow-".$self->depends_on,
                        ) : (),
