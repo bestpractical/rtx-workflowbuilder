@@ -61,6 +61,15 @@ sub compile_template {
                        ) : (),
                    };
 
+    if (ref $attributes->{Cc} eq 'ARRAY') {
+        # filter out owner.  Note that at this stage the value can
+        # still be template, so we can not filter the owner if the
+        # template is different but yields same value.
+        $attributes->{Cc} =
+            join(',', grep { $_ ne $self->owner } @{$attributes->{Cc}});
+    }
+    $attributes->{SquelchMailTo} = $attributes->{Cc};
+
     for (values %$attributes) {
         s/\$Approving/\$Tickets{TOP}/g;
     }
