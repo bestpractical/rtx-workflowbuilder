@@ -4,6 +4,8 @@ use strict;
 use warnings;
 __PACKAGE__->mk_accessors(qw(stages rule));
 
+our $VERSION = '1.01';
+
 sub get_stage_object {
     my ($self, $stage, $previous, $approving) = @_;
     if (ref $stage eq 'ARRAY') {
