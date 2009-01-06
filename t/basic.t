@@ -87,28 +87,19 @@ mail_ok {
                    Owner => "root", Requestor => 'minion',
                    'CustomField-'.$dep_cf->id => 'IT',
                    Queue => $q->Id);
-} { from => qr/PO via RT/,
+} { #from => qr/RT/,
+    to => 'roy@company.com',
+    subject => qr/New Pending Approval/,
+    body => qr/pending your approval/,
+},{ from => qr/PO via RT/,
     to => 'minion@company.com',
     subject => qr/answering machines/,
-    body => qr/automatically generated in response/
+    body => qr/automatically generated in response/,
 };
 
 ok ($tid,$tmsg);
 
 is ($t->ReferredToBy->Count,3, "referred to by the three tickets");
-
-# open the approval tickets that are ready for approval
-mail_ok {
-    for my $ticket ($t->AllDependsOn) {
-        next if $ticket->Type ne 'approval' && $ticket->Status ne 'new';
-        next if $ticket->HasUnresolvedDependencies( Type => 'approval' );
-        $ticket->SetStatus('open');
-    }
-} { from => qr/RT System/,
-    to => 'roy@company.com',
-    subject => qr/New Pending Approval: Manager Approval/,
-    body => qr/pending your approval/
-};
 
 my $deps = $t->DependsOn;
 is ($deps->Count, 1, "The ticket we created depends on one other ticket");
@@ -187,6 +178,10 @@ mail_ok {
     to => 'minion@company.com',
     subject => qr/Ticket Approved:/,
     body => qr/approved by CEO/
+},{ from => qr/CEO via RT/,
+    to => 'root@localhost',
+    subject => qr/Ticket Approved:/,
+    body => qr/The ticket has been approved/
 };
 
 is_deeply([ map { $_->Status } $t, $dependson_roy, $dependson_cfo, $dependson_ceo ],

@@ -70,7 +70,8 @@ sub compile_template {
         $attributes->{Cc} =
             join(',', grep { $_ ne $self->owner } @{$attributes->{Cc}});
     }
-    $attributes->{SquelchMailTo} = $attributes->{Cc};
+    $attributes->{SquelchMailTo} = $attributes->{Cc}
+        if $attributes->{Cc};
 
     for (values %$attributes) {
         s/\$Approving/\$Tickets{TOP}/g;
