@@ -4,7 +4,17 @@ use strict;
 use warnings;
 __PACKAGE__->mk_accessors(qw(stages rule));
 
-our $VERSION = '1.01';
+our $VERSION = '1.02';
+
+=head1 NAME
+
+RTx::WorkflowBuilder - helper for configuring approval workflow in RT
+
+=head1 SYNOPSIS
+
+# see rt-workflow
+
+=cut
 
 sub get_stage_object {
     my ($self, $stage, $previous, $approving) = @_;
