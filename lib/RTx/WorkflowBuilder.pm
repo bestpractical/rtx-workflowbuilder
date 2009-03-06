@@ -66,7 +66,7 @@ sub compile_template {
                        'Content-Type' => 'text/plain',
                        @_,
                        $self->depends_on ? (
-                           'Depends-On' => "workflow-".$self->depends_on,
+                           'Depends-On' => join(',', map { "workflow-$_" } ref $self->depends_on ? @{ $self->depends_on } : ( $self->depends_on ))
                        ) : (),
                        $self->depended_on_by ? (
                            'Depended-On-By' => $self->depended_on_by,
