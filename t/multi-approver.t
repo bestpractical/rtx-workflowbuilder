@@ -7,7 +7,7 @@ BEGIN {
         or plan skip_all => 'require Email::Abstract and Test::Email';
 }
 
-plan tests => 33;
+plan tests => 34;
 use RT;
 use RT::Test;
 use RT::Test::Email;
@@ -134,13 +134,17 @@ mail_ok {
     ok($ok, "roy can approve - $msg");
 
 } { from => qr/RT System/, # why is this not roy?
+    to => 'ceo@company.com',
+    subject => qr/New Pending/,
+    body => qr/new item pending/
+},{ from => qr/RT System/, # why is this not roy?
     to => 'minion@company.com',
     subject => qr/Ticket Approved:/,
     body => qr/approved by ROY/
 };
 $t->Load($t->id);$dependson_cfo->Load($dependson_cfo->id);
 is_deeply([ map { $_->Status } $t, $dependson_roy, $dependson_cfo, $dependson_ceo ],
-          [ 'open', 'resolved', 'deleted', 'new'], 'tickets in correct state');
+          [ 'open', 'resolved', 'deleted', 'open'], 'tickets in correct state');
 
 # ceo approves
 mail_ok {

@@ -24,7 +24,8 @@ sub get_stage_object {
         for (0..$#chain) {
             push @result,
                 $self->get_stage_object($chain[$_],
-                                        $_ ? $chain[$_-1] : undef,
+                                        $approving eq 'TOP' && $_ != 0
+                                            ? $chain[$_-1] : undef,
                                         $_ == $#chain ? $approving : undef,
                                     );
         }
