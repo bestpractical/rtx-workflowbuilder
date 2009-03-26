@@ -43,6 +43,10 @@ In your RT_SiteConfig.pm:
 # the configuration
 % bin/rt-workflow PO PO-Approval
 
+# to cleanup the workflow (all Create Tickets actions) associated with
+# the queue
+% bin/rt-workflow PO --cleanup
+
 =head1 DESCRIPTION
 
 This module allows you to define approval stages and approval rules in
@@ -84,14 +88,18 @@ make it go to CEO approval.
 =cut
 
 my %opts;
-GetOptions( \%opts, "create", "help" );
+GetOptions( \%opts, "create", "cleanup", "help" );
 
 if ($opts{help}) {
     system("perldoc", $0);
     exit;
 }
 
-my ($queue, $wf_name) = @ARGV or die "Usage: $0 queue workflowname\n";
+
+my ($queue, $wf_name) = @ARGV;
+
+die "Usage: $0 queue workflowname\n" unless $queue;
+die "Usage: $0 queue workflowname\n" unless $wf_name || $opts{cleanup};
 
 use RT::Interface::CLI qw(CleanEnv
                           GetCurrentUser GetMessageContent);
@@ -112,6 +120,14 @@ my $scrips = RT::Scrips->new($RT::SystemUser);
 $scrips->Limit( FIELD => 'Queue',
                 VALUE => $q->Id );
 
+if ($opts{cleanup}) {
+    while (my $scrip = $scrips->Next) {
+        next unless $scrip->ScripActionObj->Name eq 'Create Tickets';
+        $scrip->Delete;
+    }
+    exit;
+}
+
 my $workflow_script;
 
 die "no workflow named $wf_name found" unless $workflows->{$wf_name};
@@ -119,11 +135,11 @@ die "no workflow named $wf_name found" unless $workflows->{$wf_name};
 # XXX: ensure all stages exist
 
 while (my $scrip = $scrips->Next) {
-    # XXX: make sure it's *our* scrip
-    #    next unless .....
+    # make sure it's *our* scrip
+    next unless $scrip->ScripActionObj->Name eq 'Create Tickets';
 
     if ($workflow_script) {
-        die "two scrips exist for queue @{[ $q->Name ]} workflow: ";
+        die "two Create Tickets scrips in queue @{[ $q->Name ]} workflow: use --cleanup to remove them\n";
     }
     $workflow_script = $scrip;
 }
@@ -148,10 +164,10 @@ if (!$workflow_script) {
                                         Queue => $q->Id);
 }
 else {
-    die "workflow already exists" if $opts{create};
-    warn "updating... $wf_name for @{[ $q->Name ]}";
+    die "workflow already exists\n" if $opts{create};
+    print "updating... $wf_name for @{[ $q->Name ]}\n";
 
-    warn "template name changed"
+    print "template name changed\n"
         if $workflow_script->TemplateObj->Name ne $wf_name;
     $workflow_script->TemplateObj->SetContent($approval_template);
     $workflow_script->TemplateObj->SetName($wf_name);
