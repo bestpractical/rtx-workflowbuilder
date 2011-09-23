@@ -60,7 +60,7 @@ sub compile_template {
     my $attributes = { Queue => '___Approvals',
                        Type => 'approval',
                        Owner => $self->owner,
-                       Requestors => '{$Approving->Requestors}',
+                       Requestors => '{$Approving->RequestorAddresses}',
                        Subject => $self->subject || 'Approval for ticket {$Approving->Id}: {$Approving->Subject}',
                        'Refers-To' => 'TOP',
                        Due => '{time + 86400}', # XXX: configurable
